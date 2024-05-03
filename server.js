@@ -7,13 +7,17 @@ const Menu = require("./models/Menu"); // Inkluderar modell för meny
 const Booking = require("./models/Booking"); // Inkluderar modell för bokningar
 const Contact = require("./models/Contact"); // Inkluderar modell för kontaktmeddelanden
 const Review = require("./models/Review"); // Inkluderar modell för recensioner
-const Image = require("./models/Image"); // Inkluderar modell för bilder
+const fileUpload = require("express-fileupload"); // Inkluderar fileupload för att hantera filuppladdning
+const path = require("path"); // Inkluderar path för att hantera filnamn säkert
+const fileType = require("file-type"); // Inkluderar file-type för att kontrollera mime-typer
 
 const app = express(); // Startar applikationen med express
 app.use(express.json()); // Inkluderar middleware till express för att konvertera data till json automatiskt
 const port = process.env.PORT || 3000; // Lagrar variabel för port, startar antingen enligt inställningar i env-filen eller på port 3000
 
 app.use(cors()); // Använder cors för att tillåta alla domäner
+app.use(fileUpload()); // Använder fileupload
+app.use(express.static("public")); // Sätter mappen public som statisk mapp
 
 // Använder exporterade routes
 app.use("/api", authRoutes);
@@ -60,8 +64,8 @@ app.get("/api/reviews", async (req, res) => {
     }
 });
 
-// Skapar en GET-route för att hämta alla bilder
-app.get("/api/images", async (req, res) => {
+// Skapar en GET-route för att hämta bilder
+app.get("/api/image", async (req, res) => {
     try {
         // Hämtar alla bilder från databasen
         const images = await Image.find({});
@@ -173,20 +177,38 @@ app.get("/api/messages", authenticateToken, async (req, res) => {
     }
 });
 
-// Route för POST (ladda upp ny bild)
-app.post("/api/images", authenticateToken, async (req, res) => {
-    try {
-        // Skapar ny bild genom att läsa in datan från body
-        const newImage = await Image.create(req.body);
-        // Loggar lyckad tilläggning
-        console.log("Bild uppladdad");
-        res.status(201).json({ message: "Din bild har laddats upp!" }); // Returnerar success-meddelande med statuskod
-        // Fångar upp ev. felmeddelanden
-    } catch (error) {
-        console.error("Fel vid uppladdning av bild: ", error);
-        // Returnerar statuskod tillsammans med felet
-        return res.status(500).json(error);
+// Deklarerar variabel för tillåtna MIME-typer, endast JPEG
+const allowedTypes = "image/jpeg";
+
+// Route för PUT (uppdatera befintlig bild)
+app.put("/api/image", authenticateToken, async (req, res) => {
+    // Kontrollerar om bilden laddats upp
+    if (!req.files || Object.keys(req.files).length === 0) {
+        // Returnerar felkod och felmeddelande om bild saknas
+        return res.status(400).send("Ingen bild laddades upp");
     }
+
+    // Hämtar den uppladdade filen
+    const image = req.files.bgImage;
+    const imageType = await fileType.fromBuffer(image.data); // Använd file-type för att kontrollera MIME-typen
+
+        // Kontrollerar om MIME-typen är tillåten
+        if (!allowedTypes.includes(imageType.mime)) {
+            // Returnerar felkod och felmeddelande om filtypen är av fel format
+            return res.status(400).send("Endast JPG-filer är tillåtna");
+        }
+
+    // Definierar sökvägen där filen ska sparas, hårdkodar filnamnet för att ersätta befintlig bild
+    const uploadPath = path.join(__dirname, "public/images", "background.jpg");
+
+    // Använder mv() för att flytta filen till rätt katalog
+    image.mv(uploadPath, function (err) {
+        if (err)
+            // Returnerar fel + felkod om error uppstår
+            return res.status(500).send(err);
+        // Skickar ett meddelande om lyckad uppdatering annars
+        res.send("Bilden har uppdaterats!");
+    });
 });
 
 // PUT-route för att bekräfta en bokning (uppdatering)
