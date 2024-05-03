@@ -177,38 +177,63 @@ app.get("/api/messages", authenticateToken, async (req, res) => {
     }
 });
 
-// Deklarerar variabel för tillåtna MIME-typer, endast JPEG
-const allowedTypes = "image/jpeg";
-
 // Route för PUT (uppdatera befintlig bild)
 app.put("/api/image", authenticateToken, async (req, res) => {
-    // Kontrollerar om bilden laddats upp
-    if (!req.files || Object.keys(req.files).length === 0) {
-        // Returnerar felkod och felmeddelande om bild saknas
-        return res.status(400).send("Ingen bild laddades upp");
-    }
+    try {
+        // Kontrollerar om bilden laddats upp
+        if (!req.files || !req.files.bgImage) {
+            // Returnerar felkod och felmeddelande om bild saknas
+            return res.status(400).json({ message: "Ingen bild laddades upp" });
+        }
 
-    // Hämtar den uppladdade filen
-    const image = req.files.bgImage;
-    const imageType = await fileType.fromBuffer(image.data); // Använd file-type för att kontrollera MIME-typen
+        // Hämtar den uppladdade filen
+        const image = req.files.bgImage;
+        const imageType = await fileType.fromBuffer(image.data); // Använd file-type för att kontrollera MIME-typen
+
+        // Deklarerar variabel i en array för tillåtna MIME-typer, endast JPEG
+        const allowedTypes = ["image/jpeg"];
 
         // Kontrollerar om MIME-typen är tillåten
         if (!allowedTypes.includes(imageType.mime)) {
             // Returnerar felkod och felmeddelande om filtypen är av fel format
-            return res.status(400).send("Endast JPG-filer är tillåtna");
+            return res.status(400).json({ message: "Endast JPG-filer är tillåtna" });
         }
 
-    // Definierar sökvägen där filen ska sparas, hårdkodar filnamnet för att ersätta befintlig bild
-    const uploadPath = path.join(__dirname, "public/images", "background.jpg");
+        // Definierar sökvägen där filen ska sparas, hårdkodar filnamnet för att ersätta befintlig bild
+        const uploadPath = path.join(__dirname, "public/images", "background.jpg");
 
-    // Använder mv() för att flytta filen till rätt katalog
-    image.mv(uploadPath, function (err) {
-        if (err)
-            // Returnerar fel + felkod om error uppstår
-            return res.status(500).send(err);
-        // Skickar ett meddelande om lyckad uppdatering annars
-        res.send("Bilden har uppdaterats!");
-    });
+        // Använder mv() för att flytta filen till rätt katalog
+        image.mv(uploadPath, async (err) => {
+            if (err) {
+                // Returnerar fel + felkod om error uppstår
+                return res.status(500).json({ message: "Fel vid filöverföring", err });
+            }
+
+            try {
+                // Hämtar alt-text från bodyn, sätter alternativ alt.text när den saknas
+                const altText = req.body.altText || "Bakgrundsbild";
+                // Uppdaterar bilden i databasen
+                const updatedImage = await Image.updateOne({ imagePath: uploadPath }, { $set: { altText: altText } }, { runValidators: true }); // Sätter runValidators till true för att aktivera schemavalidering vid uppdateringen
+                // Kontrollerar om uppdateringen har lyckats
+                if (updatedImage.matchedCount === 0) {
+                    // Returnerar felmeddelande om uppdatringen inte skett
+                    return res.status(404).json({ message: "Ingen bild hittades med den angivna sökvägen." });
+                }
+                // Skriver ut success-meddelande till konsollen
+                console.log("Bilden har uppdaterats");
+                // Returnerar successmeddelande till klienten
+                return res.json({ message: "Bilden har uppdaterats!" });
+                // Fångar ev. fel
+            } catch (error) {
+                console.error("Fel vid uppdatering av bild: ", error);
+                res.status(500).json(error);
+            }
+        });
+        // Fångar upp ev. fel
+    } catch (error) {
+        console.error("Fel vid uppladdning av bild: ", error);
+        res.status(500).json(error);
+    }
 });
 
 // PUT-route för att bekräfta en bokning (uppdatering)
