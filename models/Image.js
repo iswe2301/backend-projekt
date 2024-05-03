@@ -8,11 +8,7 @@ const imageSchema = new mongoose.Schema({
     },
     altText: {
         type: String,
-        required: [true, "Du måste skicka med en beskrivande alt-text för bilden"] // Obligatoriskt med beskrivning av bilden för alt-text
-    },
-    uploaded: {
-        type: Date,
-        default: Date.now // Default aktuellt datum när bilden laddades upp
+        required: false
     }
 });
 
