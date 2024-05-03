@@ -3,7 +3,11 @@ require("dotenv").config(); // Inkluderar env-fil
 const jwt = require("jsonwebtoken"); // Inkluderar JWT
 const cors = require('cors'); // Inkluderar cors
 const authRoutes = require("./routes/authRoutes"); // Inkluderar routes
-const Experience = require('./models/Experience');  // Inkluderar modell för erfarenheter
+const Menu = require("./models/Menu"); // Inkluderar modell för meny
+const Booking = require("./models/Booking"); // Inkluderar modell för bokningar
+const Contact = require("./models/Contact"); // Inkluderar modell för kontaktmeddelanden
+const Review = require("./models/Review"); // Inkluderar modell för recensioner
+const Image = require("./models/Image"); // Inkluderar modell för bilder
 
 const app = express(); // Startar applikationen med express
 app.use(express.json()); // Inkluderar middleware till express för att konvertera data till json automatiskt
@@ -14,22 +18,108 @@ app.use(cors()); // Använder cors för att tillåta alla domäner
 // Använder exporterade routes
 app.use("/api", authRoutes);
 
-// Skapar en GET-route som är skyddad av JWT
-app.get("/api/experiences", authenticateToken, async (req, res) => {
+// ROUTES
+
+// Skapar en GET-route för att hämta alla rätter i menyn
+app.get("/api/dishes", async (req, res) => {
     try {
-        // Hämtar alla alla jobberfarenheter från DB
-        const experiences = await Experience.find({});
-        // Kontrollerar om det inte finns några erfarenheter (tom)
-        if (experiences.length === 0) {
+        // Hämtar alla rätter i menyn från databasen
+        const dishes = await Menu.find({});
+        // Kontrollerar om det inte finns några rätter i menyn
+        if (dishes.length === 0) {
             // Returnerar felmeddelande med felkod om inga resultat finns
-            return res.status(404).json({ message: "Inga jobberfarenheter funna" });
+            return res.status(404).json({ message: "Inga rätter i menyn funna" });
         } else {
-            // Returnerar erfarenheter
-            return res.json(experiences);
+            // Returnerar meny med rätter
+            return res.json(dishes);
+        }
+    } catch (error) {
+        console.error("Fel vid hämtning av menyn: ", error);
+        // Returnerar statuskod tillsammans med felet
+        return res.status(500).json(error);
+    }
+});
+
+// Skapar en GET-route för att hämta alla recensioner
+app.get("/api/reviews", async (req, res) => {
+    try {
+        // Hämtar alla recensioner från databasen
+        const reviews = await Review.find({});
+        // Kontrollerar om det inte finns några recensioner
+        if (reviews.length === 0) {
+            // Returnerar felmeddelande med felkod om inga resultat finns
+            return res.status(404).json({ message: "Inga recensioner funna" });
+        } else {
+            // Returnerar recensioner
+            return res.json(reviews);
+        }
+    } catch (error) {
+        console.error("Fel vid hämtning av recensioner: ", error);
+        // Returnerar statuskod tillsammans med felet
+        return res.status(500).json(error);
+    }
+});
+
+// Skapar en GET-route för att hämta alla bilder
+app.get("/api/images", async (req, res) => {
+    try {
+        // Hämtar alla bilder från databasen
+        const images = await Image.find({});
+        // Kontrollerar om det inte finns några bilder
+        if (images.length === 0) {
+            // Returnerar felmeddelande med felkod om inga resultat finns
+            return res.status(404).json({ message: "Inga bilder funna" });
+        } else {
+            // Returnerar bilder
+            return res.json(images);
+        }
+    } catch (error) {
+        console.error("Fel vid hämtning av bilder: ", error);
+        // Returnerar statuskod tillsammans med felet
+        return res.status(500).json(error);
+    }
+});
+
+
+// SKYDDADE ROUTES
+
+// Skapar en GET-route som är skyddad av JWT för bokningar
+app.get("/api/bookings", authenticateToken, async (req, res) => {
+    try {
+        // Hämtar alla alla bokningar från DB
+        const bookings = await Booking.find({});
+        // Kontrollerar om det inte finns några bokningar i menyn
+        if (bookings.length === 0) {
+            // Returnerar felmeddelande med felkod om inga resultat finns
+            return res.status(404).json({ message: "Inga bokningar funna" });
+        } else {
+            // Returnerar bokningar
+            return res.json(bookings);
         }
         // Fångar upp ev. felmeddelanden
     } catch (error) {
-        console.error("Fel vid hämtning av erfarenheter: ", error);
+        console.error("Fel vid hämtning av bokningar: ", error);
+        // Returnerar statuskod tillsammans med felet
+        return res.status(500).json(error);
+    }
+});
+
+// Skapar en GET-route som är skyddad av JWT för kontaktformulär
+app.get("/api/messages", authenticateToken, async (req, res) => {
+    try {
+        // Hämtar alla alla meddelanden från DB
+        const messages = await Contact.find({});
+        // Kontrollerar om det inte finns några meddelanden
+        if (messages.length === 0) {
+            // Returnerar felmeddelande med felkod om inga resultat finns
+            return res.status(404).json({ message: "Inga meddelanden funna" });
+        } else {
+            // Returnerar meddelanden
+            return res.json(messages);
+        }
+        // Fångar upp ev. felmeddelanden
+    } catch (error) {
+        console.error("Fel vid hämtning av meddelanden: ", error);
         // Returnerar statuskod tillsammans med felet
         return res.status(500).json(error);
     }
