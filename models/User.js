@@ -61,7 +61,7 @@ userSchema.statics.login = async function (username, password) {
         }
         const isPasswordMatch = await user.comparePassword(password); // Kontrollerar om lösenorden matchar
         if (!isPasswordMatch) {
-            throw new error("Felaktigt användarnamn/lösenord"); // Kastar fel om lösenorden inte matchar
+            throw new Error("Felaktigt användarnamn/lösenord"); // Kastar fel om lösenorden inte matchar
         }
         return user; // Returnera användaren om inloggningen lyckades
     } catch (error) {
@@ -69,5 +69,5 @@ userSchema.statics.login = async function (username, password) {
     }
 }
 
-const User = mongoose.model("User", userSchema); // Skapar en mongoose-model av schemat med namnet User
+const User = mongoose.model("User", userSchema, "users"); // Skapar en mongoose-model av schemat med namnet User, hamnar i collectionen users
 module.exports = User; // Exporterar User
