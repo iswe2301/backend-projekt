@@ -3,9 +3,10 @@ const router = express.Router(); // Skapar ett nytt router-objekt
 const jwt = require("jsonwebtoken"); // Inkluderar JWT
 const User = require("../models/User"); // Inkluderar användarmodell
 require("dotenv").config(); // Inkluderar dotenv-fil
+const { authenticateToken } = require("../functions/authFunction.js"); // Inkluderar funktion för autentisering
 
 // Skapar en POST-route för att registrera en ny användare
-router.post("/register", async (req, res) => {
+router.post("/register", authenticateToken, async (req, res) => {
     try {
         // Hämtar användarnamn och lösenord från bodyn
         const { username, password } = req.body;
