@@ -9,7 +9,8 @@ const Contact = require("./models/Contact"); // Inkluderar modell för kontaktme
 const Review = require("./models/Review"); // Inkluderar modell för recensioner
 const fileUpload = require("express-fileupload"); // Inkluderar fileupload för att hantera filuppladdning
 const path = require("path"); // Inkluderar path för att hantera filnamn säkert
-const fileType = require("file-type"); // Inkluderar file-type för att kontrollera mime-typer
+const nodemailer = require("nodemailer"); // Inkluderar nodemailer för att kunna skicka bekräftelsemail
+const moment = require("moment"); // Inkluderar moment för att formatera datum/tid
 
 const app = express(); // Startar applikationen med express
 app.use(express.json()); // Inkluderar middleware till express för att konvertera data till json automatiskt
@@ -21,6 +22,15 @@ app.use(express.static("public")); // Sätter mappen public som statisk mapp
 
 // Använder exporterade routes
 app.use("/api", authRoutes);
+
+// Skapar en transportör för att kunna skicka e-post
+const transporter = nodemailer.createTransport({
+    service: "gmail", // Använder gmail
+    auth: {
+        user: process.env.EMAIL, // epost från env-fil
+        pass: process.env.PASS // lösen från env-fil
+    }
+});
 
 // ROUTES
 
@@ -186,6 +196,8 @@ app.put("/api/image", authenticateToken, async (req, res) => {
             return res.status(400).json({ message: "Ingen bild laddades upp" });
         }
 
+        const fileType = (await import("file-type")).default; // Importerar file-type för att kontrollera mime-typer
+
         // Hämtar den uppladdade filen
         const image = req.files.bgImage;
         const imageType = await fileType.fromBuffer(image.data); // Använd file-type för att kontrollera MIME-typen
@@ -247,7 +259,37 @@ app.put("/api/bookings/confirm/:id", authenticateToken, async (req, res) => {
         if (!confirmedBooking) {
             return res.status(404).json({ message: "Bokning inte funnen" }); // Returnerar felkod och felmeddelande om bokningen inte kunde hittas/uppdateras
         }
-        res.json({ message: "Bokning bekräftad!" }); // Returnerar success-meddelane bokning hittats och bekräftats
+
+        const bookingDate = moment(confirmedBooking.date); // Använder moment för att formattera datum
+        const formattedDate = bookingDate.format("YYYY-MM-DD HH:mm"); // Definierar format
+
+        // Skriver ett meddelande för bokningsbekräftelsen, formatterar med html + inline css
+        const bookingInfo =
+        `<h1 style="font-size:18px;">Tack för din bokning, ${confirmedBooking.name}!</h1>
+        <p>Din bokning har nu bekräftats. Ditt bord är reserverat för ${confirmedBooking.guests} personer, ${formattedDate}.</p>
+        <p>Vi ser fram emot ditt besök!</p>
+        
+        <p>Hälsningar,<br>
+        Restaurang Test</p>`;
+
+        // Sätter e-postmeddelandets inställningar
+        const mailOptions = {
+            from: '"Restaurang Test" <no-reply@restaurangtest.com>', // Namn på avsändaren
+            to: confirmedBooking.email, // Skickar till epostadressen som finns i bokningen
+            subject: "Din bokning är bekräftad", // Ämnet på mailet
+            html: bookingInfo // Meddelandet, skickas i HTML-format
+        };
+
+        // Skickar e-posten
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.error("Fel vid skickande av bekräftelsemail: ", error); // Loggar fel
+            } else {
+                console.log("Bekräftelsemail skickat: ", info.response); // Loggar success
+            }
+        });
+        res.json({ message: "Bokning bekräftad och bekräftelsemail skickat!" }); // Returnerar success-meddelane bokning bekräftats + skickat epost
+
         // Fångar upp ev. fel
     } catch (error) {
         console.error("Fel vid bekräftelse av bokning: ", error);
