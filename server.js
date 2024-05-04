@@ -11,12 +11,12 @@ app.use(express.json()); // Inkluderar middleware till express för att konverte
 app.use(express.static("public")); // Sätter mappen public som statisk mapp
 
 // Inkluderar routes
-const userRoutes = require("./routes/userRoutes"); // Inkluderar routes
-const bookingRoutes = require("./routes/bookingRoutes"); // Inkluderar routes
-const contactRoutes = require("./routes/contactRoutes"); // Inkluderar routes
-const imageRoutes = require("./routes/imageRoutes"); // Inkluderar routes
-const menuRoutes = require("./routes/menuRoutes"); // Inkluderar routes
-const reviewRoutes = require("./routes/reviewRoutes"); // Inkluderar routes
+const userRoutes = require("./routes/userRoutes"); 
+const bookingRoutes = require("./routes/bookingRoutes");
+const contactRoutes = require("./routes/contactRoutes"); 
+const imageRoutes = require("./routes/imageRoutes"); 
+const menuRoutes = require("./routes/menuRoutes"); 
+const reviewRoutes = require("./routes/reviewRoutes");
 
 // Använder exporterade routes
 app.use("/api", userRoutes);
