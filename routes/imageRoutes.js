@@ -68,9 +68,9 @@ router.put("/", authenticateToken, async (req, res) => {
                 // Uppdaterar bilden i databasen
                 const updatedImage = await Image.updateOne({ _id: process.env.ID }, { $set: { altText: altText, imagePath: uploadPath } }, { runValidators: true }); // Sätter runValidators till true för att aktivera schemavalidering vid uppdateringen
                 // Kontrollerar om uppdateringen har lyckats
-                if (updatedImage.matchedCount === 0) {
+                if (!updatedImage) {
                     // Returnerar felmeddelande om uppdatringen inte skett
-                    return res.status(404).json({ message: "Ingen bild hittades med den angivna sökvägen." });
+                    return res.status(404).json({ message: "Ingen bild hittades." });
                 }
                 // Skriver ut success-meddelande till konsollen
                 console.log("Bilden har uppdaterats");
