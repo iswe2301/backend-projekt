@@ -8,12 +8,12 @@ const dishSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: [true, "Du måste ange en beskrivning av rätten"]
+        required: false // Falskt då tillbehör/dryck ej behöver beskrivning
     },
     category: {
         type: String,
         required: [true, "Du måste ange rättens kategori"],
-        enum: ["starter", "main", "dessert", "drink"] // Menyns huvudkategorier
+        enum: ["starter", "main", "dessert", "sides", "drink",] // Menyns huvudkategorier
     },
     drinkcategory: {
         type: String,
