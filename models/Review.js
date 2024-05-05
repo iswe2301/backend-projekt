@@ -4,7 +4,7 @@ const mongoose = require("mongoose"); // Inkluderar mongoose
 const reviewSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true ["Du måste ange namn"]
+        required: [true, "Du måste ange namn"]
     },
     rating: {
         type: Number,
