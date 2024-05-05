@@ -20,9 +20,38 @@ router.post("/", async (req, res) => {
     try {
         // Skapar ny bokning genom att läsa in datan från body
         const newBooking = await Booking.create(req.body);
+
+        const bookingDate = moment(newBooking.date); // Använder moment för att formattera datum
+        const formattedDate = bookingDate.format("YYYY-MM-DD HH:mm"); // Definierar format
+
+        // Skriver ett meddelande för bokningsbekräftelsen, formatterar med html + inline css
+        const bookingInfo =
+        `<h1 style="font-size:18px;">Tack för din bokning, ${newBooking.name}!</h1>
+        <p>Din bokning har bekräftats. Ditt bord är reserverat för ${newBooking.guests} personer, ${formattedDate}.</p>
+        <p>Vi ser fram emot ditt besök!</p>
+        
+        <p>Hälsningar,<br>
+        Restaurang MÅ.</p>`;
+
+        // Sätter e-postmeddelandets inställningar
+        const mailOptions = {
+            from: '"Restaurang MÅ." <no-reply@restaurangtest.com>', // Namn på avsändaren
+            to: newBooking.email, // Skickar till epostadressen som finns i bokningen
+            subject: "Bekräftelse bokat bord - MÅ.", // Ämnet på mailet
+            html: bookingInfo // Meddelandet, skickas i HTML-format
+        };
+
+        // Skickar e-posten
+        transporter.sendMail(mailOptions, function (error, info) {
+            if (error) {
+                console.error("Fel vid skickande av bekräftelsemail: ", error); // Loggar fel
+            } else {
+                console.log("Bekräftelsemail skickat: ", info.response); // Loggar success
+            }
+        });
         // Loggar lyckad tilläggning
-        console.log("Bokning genomförd");
-        res.status(201).json({ message: "Din bokning har registrerats!" }); // Returnerar success-meddelande med statuskod
+        console.log("Bokning genomförd och bekräftelsemail skickat");
+        res.status(201).json({ message: "Din bokning har registrerats och en bekräftelse är skickad till din e-post!" }); // Returnerar success-meddelande med statuskod
         // Fångar upp ev. felmeddelanden
     } catch (error) {
         console.error("Fel vid skapande av bokning: ", error);
@@ -49,56 +78,6 @@ router.get("/", authenticateToken, async (req, res) => {
         console.error("Fel vid hämtning av bokningar: ", error);
         // Returnerar statuskod tillsammans med felet
         return res.status(500).json(error);
-    }
-});
-
-// PUT-route för att bekräfta en bokning (uppdatering)
-router.put("/confirm/:id", authenticateToken, async (req, res) => {
-    try {
-        // Hämtar ID från url:en
-        const id = req.params.id;
-        // Söker efter den specifika bokningen baserat på ID och uppdaterar confirmed till true, sätter new till true för att returnera det nya dokumentet
-        const confirmedBooking = await Booking.findByIdAndUpdate(id, { confirmed: true }, { new: true });
-        // Kontrollerar om bokningen existerar
-        if (!confirmedBooking) {
-            return res.status(404).json({ message: "Bokning inte funnen" }); // Returnerar felkod och felmeddelande om bokningen inte kunde hittas/uppdateras
-        }
-
-        const bookingDate = moment(confirmedBooking.date); // Använder moment för att formattera datum
-        const formattedDate = bookingDate.format("YYYY-MM-DD HH:mm"); // Definierar format
-
-        // Skriver ett meddelande för bokningsbekräftelsen, formatterar med html + inline css
-        const bookingInfo =
-        `<h1 style="font-size:18px;">Tack för din bokning, ${confirmedBooking.name}!</h1>
-        <p>Din bokning har nu bekräftats. Ditt bord är reserverat för ${confirmedBooking.guests} personer, ${formattedDate}.</p>
-        <p>Vi ser fram emot ditt besök!</p>
-        
-        <p>Hälsningar,<br>
-        Restaurang Test</p>`;
-
-        // Sätter e-postmeddelandets inställningar
-        const mailOptions = {
-            from: '"Restaurang Test" <no-reply@restaurangtest.com>', // Namn på avsändaren
-            to: confirmedBooking.email, // Skickar till epostadressen som finns i bokningen
-            subject: "Din bokning är bekräftad", // Ämnet på mailet
-            html: bookingInfo // Meddelandet, skickas i HTML-format
-        };
-
-        // Skickar e-posten
-        transporter.sendMail(mailOptions, function (error, info) {
-            if (error) {
-                console.error("Fel vid skickande av bekräftelsemail: ", error); // Loggar fel
-            } else {
-                console.log("Bekräftelsemail skickat: ", info.response); // Loggar success
-            }
-        });
-        res.json({ message: "Bokning bekräftad och bekräftelsemail skickat!" }); // Returnerar success-meddelane bokning bekräftats + skickat epost
-
-        // Fångar upp ev. fel
-    } catch (error) {
-        console.error("Fel vid bekräftelse av bokning: ", error);
-        // Returnerar statuskod tillsammans med felet
-        res.status(500).json(error);
     }
 });
 
