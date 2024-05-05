@@ -4,6 +4,7 @@ const Image = require("../models/Image"); // Inkluderar modell för bilder
 const fileUpload = require("express-fileupload"); // Inkluderar fileupload för att hantera filuppladdning
 const path = require("path"); // Inkluderar path för att hantera filnamn säkert
 const { authenticateToken } = require("../functions/authFunction.js"); // Inkluderar funktion för autentisering
+require("dotenv").config(); // Inkluderar dotenv-fil
 
 router.use(fileUpload()); // Använder fileupload
 
@@ -36,11 +37,11 @@ router.put("/", authenticateToken, async (req, res) => {
             return res.status(400).json({ message: "Ingen bild laddades upp" });
         }
 
-        const fileType = (await import("file-type")).default; // Importerar file-type för att kontrollera mime-typer
+        const { fileTypeFromBuffer } = await import("file-type"); // Importerar file-type för att kontrollera mime-typer
 
         // Hämtar den uppladdade filen
         const image = req.files.bgImage;
-        const imageType = await fileType.fileTypeFromBuffer(image.data); // Använder file-type för att kontrollera MIME-typen
+        const imageType = await fileTypeFromBuffer(image.data); // Använder file-type för att kontrollera MIME-typen
 
         // Deklarerar variabel i en array för tillåtna MIME-typer, endast JPEG
         const allowedTypes = ["image/jpeg"];
@@ -52,7 +53,7 @@ router.put("/", authenticateToken, async (req, res) => {
         }
 
         // Definierar sökvägen där filen ska sparas, hårdkodar filnamnet för att ersätta befintlig bild
-        const uploadPath = path.join(__dirname, "public/images", "background.jpg");
+        const uploadPath = path.join(__dirname, "../public/images", "background.jpg");
 
         // Använder mv() för att flytta filen till rätt katalog
         image.mv(uploadPath, async (err) => {
@@ -65,7 +66,7 @@ router.put("/", authenticateToken, async (req, res) => {
                 // Hämtar alt-text från bodyn, sätter alternativ alt.text när den saknas
                 const altText = req.body.altText || "Bakgrundsbild";
                 // Uppdaterar bilden i databasen
-                const updatedImage = await Image.updateOne({ imagePath: uploadPath }, { $set: { altText: altText } }, { runValidators: true }); // Sätter runValidators till true för att aktivera schemavalidering vid uppdateringen
+                const updatedImage = await Image.updateOne({ _id: process.env.ID }, { $set: { altText: altText, imagePath: uploadPath } }, { runValidators: true }); // Sätter runValidators till true för att aktivera schemavalidering vid uppdateringen
                 // Kontrollerar om uppdateringen har lyckats
                 if (updatedImage.matchedCount === 0) {
                     // Returnerar felmeddelande om uppdatringen inte skett
