@@ -40,7 +40,7 @@ router.put("/", authenticateToken, async (req, res) => {
 
         // Hämtar den uppladdade filen
         const image = req.files.bgImage;
-        const imageType = await fileType.fromBuffer(image.data); // Använd file-type för att kontrollera MIME-typen
+        const imageType = await fileType.fileTypeFromBuffer(image.data); // Använder file-type för att kontrollera MIME-typen
 
         // Deklarerar variabel i en array för tillåtna MIME-typer, endast JPEG
         const allowedTypes = ["image/jpeg"];
