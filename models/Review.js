@@ -4,7 +4,7 @@ const mongoose = require("mongoose"); // Inkluderar mongoose
 const reviewSchema = new mongoose.Schema({
     name: {
         type: String,
-        required: false // Valfritt att lämna namn
+        required: true ["Du måste ange namn"]
     },
     rating: {
         type: Number,
@@ -14,11 +14,11 @@ const reviewSchema = new mongoose.Schema({
     },
     comment: {
         type: String,
-        required: false // Valfritt att lämna kommentar
+        required: [true, "Du måste lämna en kommentar"]
     },
-    visitDate: {
+    date: {
         type: Date,
-        required: false // Valfritt att lämna datum
+        default: Date.now // Aktuellt datum som standard, när recensionen gjordes
     }
 });
 
