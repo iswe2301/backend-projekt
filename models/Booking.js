@@ -25,10 +25,6 @@ const bookingSchema = new mongoose.Schema({
     specialRequests: {
         type: String, // Övriga önskemål, valfritt
         required: false
-    },
-    confirmed: {
-        type: Boolean,
-        default: false // Automatiskt false på bekräftad bokning
     }
 });
 
