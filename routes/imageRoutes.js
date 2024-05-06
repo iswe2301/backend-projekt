@@ -65,17 +65,21 @@ router.put("/", authenticateToken, async (req, res) => {
             try {
                 // Hämtar alt-text från bodyn, sätter alternativ alt.text när den saknas
                 const altText = req.body.altText || "Bakgrundsbild";
-                // Uppdaterar bilden i databasen
-                const updatedImage = await Image.updateOne({ _id: process.env.ID }, { $set: { altText: altText, imagePath: uploadPath } }, { runValidators: true }); // Sätter runValidators till true för att aktivera schemavalidering vid uppdateringen
+
+                // Skapar en url till bilden genom att hämta protokoll och host för att bilden ska vara tillgänglig via webbläsaren
+                const imageUrl = `${req.protocol}://${req.get("host")}/images/background.jpg`;
+
+                // Uppdaterar bilden i databasen med URL och alt-text
+                const updatedImage = await Image.updateOne({ _id: process.env.ID }, { $set: { altText: altText, imagePath: imageUrl } }, { runValidators: true }); // Sätter runValidators till true för att aktivera schemavalidering vid uppdateringen
                 // Kontrollerar om uppdateringen har lyckats
-                if (!updatedImage) {
+                if (updatedImage.matchedCount === 0) {
                     // Returnerar felmeddelande om uppdatringen inte skett
-                    return res.status(404).json({ message: "Ingen bild hittades." });
+                    return res.status(404).json({ message: "Ingen bild hittades med den angivna sökvägen." });
                 }
                 // Skriver ut success-meddelande till konsollen
                 console.log("Bilden har uppdaterats");
-                // Returnerar successmeddelande till klienten
-                return res.json({ message: "Bilden har uppdaterats!" });
+                // Returnerar svaret till klienten
+                return res.json(updatedImage);
                 // Fångar ev. fel
             } catch (error) {
                 console.error("Fel vid uppdatering av bild: ", error);
