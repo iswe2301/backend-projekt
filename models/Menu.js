@@ -17,8 +17,8 @@ const dishSchema = new mongoose.Schema({
     },
     drinkcategory: {
         type: String,
-        enum: ["wine", "beer", "non-alcoholic"], // Underkategorier för drycker
-        default: null
+        enum: ["wine", "bubbles", "beer", "non-alcoholic"], // Underkategorier för drycker
+        default: null // Default null om inget annat anges
     },
     price: {
         type: Number,
